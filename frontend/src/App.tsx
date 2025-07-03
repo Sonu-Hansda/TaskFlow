@@ -4,12 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Dashboard } from "./pages/Dashboard";
+import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
 // import { KanbanPage } from "./pages/KanbanPage";
 // import { MyTasksPage } from "./pages/MyTasksPage";
 // import { TeamPage } from "./pages/TeamPage";
 // import { ProfilePage } from "./pages/ProfilePage";
-// import { LoginPage } from "./pages/LoginPage";
-// import { SignupPage } from "./pages/SignupPage";
 // import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,8 +21,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} /> */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/" element={<Dashboard />} />
           {/* <Route path="/kanban" element={<KanbanPage />} />
           <Route path="/tasks" element={<MyTasksPage />} />
