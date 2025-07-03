@@ -15,13 +15,31 @@ interface AuthState {
     error: string | null;
 }
 
-const initialState: AuthState = {
-    userInfo: null,
-    token: null,
-    isAuthenticated: false,
-    loading: false,
-    error: null,
-}
+
+const loadState = (): AuthState => {
+    try {
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+
+        return {
+            userInfo: user ? JSON.parse(user) : null,
+            token: token || null,
+            isAuthenticated: !!token,
+            loading: false,
+            error: null,
+        };
+    } catch (err) {
+        return {
+            userInfo: null,
+            token: null,
+            isAuthenticated: false,
+            loading: false,
+            error: null,
+        };
+    }
+};
+
+const initialState: AuthState = loadState();
 
 const authSlice = createSlice({
     name: 'auth',
@@ -31,11 +49,17 @@ const authSlice = createSlice({
             state.userInfo = action.payload.user;
             state.token = action.payload.token;
             state.isAuthenticated = true;
+
+            localStorage.setItem('token', action.payload.token);
+            localStorage.setItem('user', JSON.stringify(action.payload.user));
         },
         logout: (state) => {
             state.userInfo = null;
             state.token = null;
             state.isAuthenticated = false;
+
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
         },
         setLoading: (state, action: PayloadAction<boolean>) => {
             state.loading = action.payload;
