@@ -11,6 +11,7 @@ import { KanbanPage } from "./pages/Kanban";
 import { MyTasks } from "./pages/MyTask";
 import { Team } from "./pages/Team";
 import { Profile } from "./pages/Profile";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -23,11 +24,11 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/kanban" element={<KanbanPage />} />
-          <Route path="/tasks" element={<MyTasks />} />
-          <Route path="/team" element={<Team />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/kanban" element={<ProtectedRoute><KanbanPage /> </ProtectedRoute>} />
+          <Route path="/tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
+          <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
