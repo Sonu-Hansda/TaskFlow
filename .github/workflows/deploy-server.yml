@@ -1,0 +1,36 @@
+name: Deploy Server
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'server/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: remove client folder
+        uses: rm -rf client/
+      
+      - name: setup node js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+        
+      - name: install dependencies
+        working-directory: server 
+        uses: npm install 
+      
+      - name: upload via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: server/

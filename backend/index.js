@@ -6,6 +6,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const taskRoutes = require("./routes/task.route");
 const authRoutes = require("./routes/auth.route");
+const userRoutes = require("./routes/users.route");
 
 dotenv.config();
 connectDB();
@@ -19,6 +20,7 @@ app.use(morgan("dev"));
 
 app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to TaskFlow API" });
