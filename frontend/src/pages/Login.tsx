@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { setCredentials, setError, setLoading } from '@/store/slices/authSlice';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store/store';
+import apiClient from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 
 export const Login: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -13,16 +20,44 @@ export const Login: React.FC = () => {
         password: '',
         rememberMe: false,
     });
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const isLoading = useSelector((state: RootState) => state.auth.loading);
+    const error = useSelector((state: RootState) => state.auth.error);
+
     const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('Login attempt:', formData);
-        setIsLoading(false);
+        try {
+            dispatch(setLoading(true));
+            dispatch(setError(null));
+
+            const response = await apiClient.post('/auth/login', {
+                email: formData.email,
+                password: formData.password,
+            });
+
+            localStorage.setItem('token', response.data.token);
+
+            dispatch(setCredentials({
+                user: response.data.user || response.data,
+                token: response.data.token,
+            }));
+            navigate('/');
+
+        } catch (err: any) {
+            dispatch(setError(err.response?.data?.message || 'Login Failed'));
+            toast({
+                title: "Login Failed",
+                description: error,
+            });
+
+        } finally {
+            dispatch(setLoading(false));
+        }
     };
 
     return (
@@ -112,6 +147,7 @@ export const Login: React.FC = () => {
                                     </>
                                 )}
                             </Button>
+                           <Toaster />
                         </form>
 
                         <div className="mt-6 text-center">
