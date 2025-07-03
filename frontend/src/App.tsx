@@ -9,8 +9,7 @@ import { Register } from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import { KanbanPage } from "./pages/Kanban";
 import { MyTasks } from "./pages/MyTask";
-// import { MyTasksPage } from "./pages/MyTasksPage";
-// import { TeamPage } from "./pages/TeamPage";
+import { Team } from "./pages/Team";
 // import { ProfilePage } from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
@@ -27,8 +26,8 @@ const App = () => (
           <Route path="/" element={<Dashboard />} />
           <Route path="/kanban" element={<KanbanPage />} />
           <Route path="/tasks" element={<MyTasks />} />
+          <Route path="/team" element={<Team />} />
           {/* <Route path="/kanban" element={<KanbanPage />} />
-          <Route path="/team" element={<TeamPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} /> */}
           <Route path="*" element={<NotFound />} />
