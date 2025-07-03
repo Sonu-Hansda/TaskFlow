@@ -10,7 +10,7 @@ import NotFound from "./pages/NotFound";
 import { KanbanPage } from "./pages/Kanban";
 import { MyTasks } from "./pages/MyTask";
 import { Team } from "./pages/Team";
-// import { ProfilePage } from "./pages/ProfilePage";
+import { Profile } from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -27,9 +27,7 @@ const App = () => (
           <Route path="/kanban" element={<KanbanPage />} />
           <Route path="/tasks" element={<MyTasks />} />
           <Route path="/team" element={<Team />} />
-          {/* <Route path="/kanban" element={<KanbanPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="*" element={<NotFound />} /> */}
+          <Route path="/profile" element={<Profile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

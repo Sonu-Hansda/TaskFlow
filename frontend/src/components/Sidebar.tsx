@@ -125,16 +125,11 @@ export const Sidebar: React.FC = () => {
               New Task
             </Button>
           </NewTaskDialog>
-          <div className="flex items-center text-sm text-gray-600">
-            <User className="w-4 h-4 mr-2" />
-            <span>John Doe</span>
-          </div>
         </div>
       </div>
     );
   }
 
-  // Mobile menu button (when sidebar is closed)
   return (
     <Button
       variant="ghost"

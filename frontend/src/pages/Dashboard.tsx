@@ -14,7 +14,7 @@ import {
 import { NewTaskDialog } from '@/components/NewTaskDialog';
 
 export const Dashboard = () => {
-  // Mock data and stats
+
   const stats = [
     { 
       title: 'Total Tasks', 
