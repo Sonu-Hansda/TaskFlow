@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store/store';
+import { setError, setLoading } from '@/store/slices/authSlice';
+import apiClient from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 
 export const Register: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -15,54 +22,84 @@ export const Register: React.FC = () => {
         confirmPassword: '',
         agreeToTerms: false,
     });
+
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const isLoading = useSelector((state: RootState) => state.auth.loading);
+    const error = useSelector((state: RootState) => state.auth.error);
+
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
 
     const validateForm = () => {
-        const newErrors: Record<string, string> = {};
 
         if (formData.name.length < 2) {
-            newErrors.name = 'Name must be at least 2 characters long';
+            dispatch(setError('Name must be at least 2 characters long'));
+            return false;
         }
 
         if (!formData.email.includes('@')) {
-            newErrors.email = 'Please enter a valid email address';
+            dispatch(setError('Please enter a valid email address'));
+            return false;
         }
 
         if (formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters long';
+            dispatch(setError('Password must be at least 6 characters long'));
+            return false;
         }
 
         if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match';
+            dispatch(setError('Passwords do not match'));
+            return false;
         }
 
         if (!formData.agreeToTerms) {
-            newErrors.terms = 'You must agree to the terms and conditions';
+            dispatch(setError('You must agree to the terms and conditions'));
+            return false;
         }
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        return true;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validateForm()) return;
+        if (!validateForm()) {
+            toast({
+                title: "Input Error",
+                description: error,
+            });
+            return;
+        }
 
-        setIsLoading(true);
+        dispatch(setLoading(true));
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('Signup attempt:', formData);
-        setIsLoading(false);
+        try {
+            await apiClient.post('/auth/register', {
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+            });
+            toast({
+                title: "Registration successful",
+                description: 'Your account has been successfully created. Please login to continue',
+            });
+            navigate('/login');
+        } catch (err: any) {
+            dispatch(setError(err.response?.data?.message || 'Registration Failed'));
+            toast({
+                title: "Registration Failed",
+                description: error,
+            });
+        } finally {
+            dispatch(setLoading(false));
+        }
     };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                {/* Logo/Brand */}
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">TaskFlow</h1>
                     <p className="text-gray-600">Create your account to get started.</p>
@@ -88,7 +125,6 @@ export const Register: React.FC = () => {
                                         required
                                     />
                                 </div>
-                                {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -105,7 +141,6 @@ export const Register: React.FC = () => {
                                         required
                                     />
                                 </div>
-                                {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -129,7 +164,6 @@ export const Register: React.FC = () => {
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
                                 </div>
-                                {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -153,7 +187,6 @@ export const Register: React.FC = () => {
                                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
                                 </div>
-                                {errors.confirmPassword && <p className="text-sm text-red-600">{errors.confirmPassword}</p>}
                             </div>
 
                             <div className="flex items-start space-x-2">
@@ -175,7 +208,6 @@ export const Register: React.FC = () => {
                                     </Link>
                                 </Label>
                             </div>
-                            {errors.terms && <p className="text-sm text-red-600">{errors.terms}</p>}
 
                             <Button
                                 type="submit"
@@ -191,6 +223,7 @@ export const Register: React.FC = () => {
                                     </>
                                 )}
                             </Button>
+                            <Toaster />
                         </form>
 
                         <div className="mt-6 text-center">
@@ -205,7 +238,7 @@ export const Register: React.FC = () => {
                 </Card>
 
                 <div className="mt-8 text-center text-xs text-gray-500">
-                    <p>© 2024 TaskFlow. All rights reserved.</p>
+                    <p>© 2025 TaskFlow. All rights reserved.</p>
                 </div>
             </div>
         </div>
