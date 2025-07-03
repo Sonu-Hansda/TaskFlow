@@ -1,10 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-const helmet = require('helmet');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
+const express = require("express");
+const cors = require("cors");
+const morgan = require("morgan");
+const helmet = require("helmet");
+const dotenv = require("dotenv");
+const connectDB = require("./config/db");
 const taskRoutes = require("./routes/task.route");
+const authRoutes = require("./routes/auth.route");
 
 dotenv.config();
 connectDB();
@@ -17,6 +18,7 @@ app.use(helmet());
 app.use(morgan("dev"));
 
 app.use("/api/tasks", taskRoutes);
+app.use("/api/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to TaskFlow API" });
