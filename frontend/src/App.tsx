@@ -8,6 +8,7 @@ import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import { KanbanPage } from "./pages/Kanban";
+import { MyTasks } from "./pages/MyTask";
 // import { MyTasksPage } from "./pages/MyTasksPage";
 // import { TeamPage } from "./pages/TeamPage";
 // import { ProfilePage } from "./pages/ProfilePage";
@@ -25,8 +26,8 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/kanban" element={<KanbanPage />} />
+          <Route path="/tasks" element={<MyTasks />} />
           {/* <Route path="/kanban" element={<KanbanPage />} />
-          <Route path="/tasks" element={<MyTasksPage />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} /> */}
