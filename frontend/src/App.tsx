@@ -12,6 +12,7 @@ import { MyTasks } from "./pages/MyTask";
 import { Team } from "./pages/Team";
 import { Profile } from "./pages/Profile";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { GuestOnlyRoute } from "./components/GuestRoute";
 
 const queryClient = new QueryClient();
 
@@ -22,8 +23,9 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={
+            <GuestOnlyRoute><Login /></GuestOnlyRoute>} />
+          <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/kanban" element={<ProtectedRoute><KanbanPage /> </ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><MyTasks /></ProtectedRoute>} />
