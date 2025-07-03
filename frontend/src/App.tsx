@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import NotFound from "./pages/NotFound";
 // import { KanbanPage } from "./pages/KanbanPage";
 // import { MyTasksPage } from "./pages/MyTasksPage";
 // import { TeamPage } from "./pages/TeamPage";
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/team" element={<TeamPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} /> */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
