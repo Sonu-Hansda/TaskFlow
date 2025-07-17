@@ -57,4 +57,39 @@ const createTask = async (req, res) => {
   }
 };
 
-module.exports = { createTask, getTasks };
+const updateTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, dueDate, priority, assignee, status } = req.body;
+
+    const task = await Task.findById(id);
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    task.title = title || task.title;
+    task.description = description || task.description;
+    task.dueDate = dueDate ? new Date(dueDate) : task.dueDate;
+    task.priority = priority || task.priority;
+    task.status = status || task.status;
+
+    if (assignee) {
+      const member = await User.findById(assignee);
+      if (member) {
+        task.assignee = {
+          id: member._id,
+          name: member.name,
+        };
+      }
+    }
+
+    const updatedTask = await task.save();
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = { createTask, getTasks, updateTask };
