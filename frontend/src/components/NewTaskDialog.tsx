@@ -20,10 +20,10 @@ import {
 import { CalendarDays, Flag, User } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
-import type { RootState } from '@/store/store';
-import apiClient from '@/lib/api';
-import { resetTaskForm, setError, setLoading, setTaskField } from '@/store/slices/taskSlice';
+import type { RootState, AppDispatch } from '@/store/store';
+import { createTask, resetTaskForm, type CreateTaskData } from '@/store/slices/taskSlice';
 import { toast } from '@/hooks/use-toast';
+import apiClient from '@/lib/api';
 
 interface NewTaskDialogProps {
     children: React.ReactNode;
@@ -39,57 +39,47 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ children }) => {
         assignee: '',
     });
 
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
 
-    const { error, task, loading } = useSelector((state: RootState) => state.task);
+    const { loading } = useSelector((state: RootState) => state.task);
     const { token } = useSelector((state: RootState) => state.auth);
     const [teamMembers, setTeamMembers] = useState<any[]>([]);
-    const [loadingMembers, setLoadingMembers] = useState<boolean>(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const taskData: CreateTaskData = {
+            ...formData,
+            status: 'todo',
+            priority: formData.priority as 'low' | 'medium' | 'high',
+        };
 
-        try {
-            dispatch(setLoading(true));
-            dispatch(setError(null));
-
-            await apiClient.post('/tasks/add-new', {
-
-                title: task.title,
-                description: task.description,
-                dueDate: task.dueDate,
-                priority: task.priority,
-                assignee: task.assignee,
-            }, {
-                headers: {
-                    "Authorization": token,
-                },
-            }
-            );
-
-            dispatch(resetTaskForm());
-            setOpen(false);
+        const resultAction = await dispatch(createTask(taskData));
+        if (createTask.fulfilled.match(resultAction)) {
             toast({
                 title: "Added Successfully",
-                description: task.title + ' added successfully',
+                description: formData.title + ' added successfully',
             });
-
-        } catch (err: any) {
-            dispatch(setError(err.response?.data?.message || 'Failed to Add'));
+            dispatch(resetTaskForm());
+            setFormData({
+                title: '',
+                description: '',
+                dueDate: '',
+                priority: 'medium',
+                assignee: '',
+            });
+            setOpen(false);
+        } else {
             toast({
                 title: "Failed to Add Task",
-                description: error,
+                description: (resultAction.payload as any)?.message || 'An error occurred',
+                variant: 'destructive'
             });
-
-        } finally {
-            dispatch(setLoading(false));
         }
     };
 
 
     useEffect(() => {
         const fetchTeamMembers = async () => {
-            setLoadingMembers(true);
             try {
                 const res = await apiClient.get('/users/getAll', {
                     headers: {
@@ -100,9 +90,7 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ children }) => {
                 setTeamMembers(users);
             } catch (err) {
                 console.error('Failed to load team members:', err);
-            } finally {
-                setLoadingMembers(false);
-            }
+            } 
         };
 
         fetchTeamMembers();
@@ -126,10 +114,8 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ children }) => {
                         <Input
                             id="title"
                             placeholder="Enter task title"
-                            value={task.title}
-                            onChange={(e) =>
-                                dispatch(setTaskField({ field: 'title', value: e.target.value }))
-                            }
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             required
                         />
                     </div>
@@ -140,10 +126,8 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ children }) => {
                             id="description"
                             placeholder="Enter task description"
                             rows={3}
-                            value={task.description}
-                            onChange={(e) =>
-                                dispatch(setTaskField({ field: 'description', value: e.target.value }))
-                            }
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         />
                     </div>
 
@@ -153,23 +137,21 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ children }) => {
                             <Input
                                 id="dueDate"
                                 type="date"
-                                value={task.dueDate}
-                                onChange={(e) =>
-                                    dispatch(setTaskField({ field: 'dueDate', value: e.target.value }))}
+                                value={formData.dueDate}
+                                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                             />
                         </div>
 
                         <div className="space-y-2">
                             <Label>Priority</Label>
-                            <Select value={task.priority}
-                                onValueChange={(e) =>
-                                    dispatch(setTaskField({ field: 'priority', value: e }))}
+                            <Select value={formData.priority}
+                                onValueChange={(value) => setFormData({ ...formData, priority: value as 'low' | 'medium' | 'high' })}
                             >
                                 <SelectTrigger>
                                     <SelectValue>
                                         <div className="flex items-center">
                                             <Flag className="w-4 h-4 mr-2" />
-                                            {task.priority}
+                                            {formData.priority}
                                         </div>
                                     </SelectValue>
                                 </SelectTrigger>
@@ -200,17 +182,15 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ children }) => {
                     <div className="space-y-2">
                         <Label>Assign To</Label>
                         <Select
-                            value={task.assignee}
-                            onValueChange={(value) => {
-                                dispatch(setTaskField({ field: 'assignee', value }));
-                            }}
+                            value={formData.assignee}
+                            onValueChange={(value) => setFormData({ ...formData, assignee: value })}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select team member">
                                     <div className="flex items-center">
                                         <User className="w-4 h-4 mr-2" />
-                                        {task.assignee && teamMembers.length > 0
-                                            ? teamMembers.find((m) => m._id === task.assignee)?.name || 'Select assignee'
+                                        {formData.assignee && teamMembers.length > 0
+                                            ? teamMembers.find((m) => m._id === formData.assignee)?.name || 'Select assignee'
                                             : 'Select assignee'}
                                     </div>
                                 </SelectValue>
@@ -238,7 +218,7 @@ export const NewTaskDialog: React.FC<NewTaskDialogProps> = ({ children }) => {
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading || !task.title.trim()}>
+                        <Button type="submit" disabled={loading === 'pending' || !formData.title.trim()}>
                             {loading ? (
                                 "Signing in..."
                             ) : (
