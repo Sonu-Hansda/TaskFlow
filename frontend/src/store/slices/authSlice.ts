@@ -5,6 +5,17 @@ export interface User {
     _id: string;
     name: string;
     email: string;
+    phone?: string;
+    location?: string;
+    bio?: string;
+    joinDate?: string;
+    avatar?: string;
+    notifications?: {
+        emailNotifications: boolean;
+        pushNotifications: boolean;
+        taskReminders: boolean;
+        teamUpdates: boolean;
+    };
 }
 
 interface AuthState {

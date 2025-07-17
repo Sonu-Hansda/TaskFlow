@@ -1,84 +1,84 @@
-import type { PayloadAction } from '@reduxjs/toolkit';
-import { createSlice } from '@reduxjs/toolkit';
-
-
-export interface Task {
-    _id?: string;
-    title: string;
-    description: string;
-    dueDate: string;
-    status: string;
-    priority: 'low' | 'medium' | 'high';
-    assignee: string;
-}
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import apiClient from '@/lib/api';
+import type { Task } from '@/types/Task';
 
 interface TaskState {
     tasks: Task[];
-    task: Task;
-    loading: boolean;
+    loading: 'idle' | 'pending' | 'succeeded' | 'failed';
     error: string | null;
 }
 
-
 const initialState: TaskState = {
     tasks: [],
-    task: {
-        title: '',
-        description: '',
-        dueDate: '',
-        status: 'todo',
-        priority: 'medium',
-        assignee: '',
-    },
-    loading: false,
+    loading: 'idle',
     error: null,
 };
+
+export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async () => {
+    const response = await apiClient.get('/tasks/get-all');
+    return response.data;
+});
+
+export type CreateTaskData = Omit<Task, 'id' | 'createdBy' | 'assignee'> & { assignee?: string };
+
+export const createTask = createAsyncThunk('tasks/createTask', async (taskData: CreateTaskData) => {
+    const response = await apiClient.post('/tasks/add-new', taskData);
+    return response.data;
+});
+
+export const updateTask = createAsyncThunk('tasks/updateTask', async (task: Task) => {
+    const response = await apiClient.put(`/tasks/${task.id}`, task);
+    return response.data;
+});
 
 const taskSlice = createSlice({
     name: 'task',
     initialState,
     reducers: {
-
-        setTaskField: (
-            state,
-            action: PayloadAction<{ field: keyof Task; value: string }>
-        ) => {
-            const { field, value } = action.payload;
-
-            if (field === 'priority') {
-                if (value === 'low' || value === 'medium' || value === 'high') {
-                    state.task.priority = value;
-                } else {
-                    console.warn(`Invalid priority value: ${value}`);
-                    return;
-                }
-            } else {
-                state.task[field] = value;
-            }
-        },
-
         resetTaskForm: (state) => {
-            state.task = initialState.task;
-            state.loading = false;
+            state.loading = 'idle';
             state.error = null;
         },
-
-        setLoading: (state, action: PayloadAction<boolean>) => {
-            state.loading = action.payload;
-        },
-
-        setError: (state, action: PayloadAction<string | null>) => {
-            state.error = action.payload;
-        },
-
-        setTasks: (state, action: PayloadAction<Task[]>) => {
-            state.tasks = action.payload;
-        },
-
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(fetchTasks.pending, (state) => {
+                state.loading = 'pending';
+            })
+            .addCase(fetchTasks.fulfilled, (state, action: PayloadAction<Task[]>) => {
+                state.loading = 'succeeded';
+                state.tasks = action.payload;
+            })
+            .addCase(fetchTasks.rejected, (state, action) => {
+                state.loading = 'failed';
+                state.error = action.error.message || 'Failed to fetch tasks';
+            })
+            .addCase(createTask.pending, (state) => {
+                state.loading = 'pending';
+            })
+            .addCase(createTask.fulfilled, (state, action: PayloadAction<Task>) => {
+                state.loading = 'succeeded';
+                state.tasks.push(action.payload);
+            })
+            .addCase(createTask.rejected, (state, action) => {
+                state.loading = 'failed';
+                state.error = action.error.message || 'Failed to create task';
+            })
+            .addCase(updateTask.pending, (state) => {
+                state.loading = 'pending';
+            })
+            .addCase(updateTask.fulfilled, (state, action: PayloadAction<Task>) => {
+                const index = state.tasks.findIndex(task => task.id === action.payload.id);
+                if (index !== -1) {
+                    state.tasks[index] = action.payload;
+                }
+            })
+            .addCase(updateTask.rejected, (state, action) => {
+                state.error = action.error.message || 'Failed to update task';
+            });
     },
 });
 
-export const { setTaskField, resetTaskForm, setLoading, setError, setTasks } =
-    taskSlice.actions;
+export const { resetTaskForm } = taskSlice.actions;
 
 export default taskSlice.reducer;
