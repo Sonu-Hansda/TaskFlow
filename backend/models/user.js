@@ -10,6 +10,12 @@ const userSchema = new mongoose.Schema({
   bio: String,
   joinDate: { type: Date, default: Date.now },
   avatar: String,
+  notifications: {
+    emailNotifications: { type: Boolean, default: true },
+    pushNotifications: { type: Boolean, default: true },
+    taskReminders: { type: Boolean, default: true },
+    teamUpdates: { type: Boolean, default: false },
+  }
 });
 
 userSchema.pre("save", async function (next) {
