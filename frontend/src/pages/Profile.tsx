@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,30 +9,37 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { User, Calendar, Bell, Shield } from 'lucide-react';
+import { User as UserIcon, Calendar, Bell, Shield } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { fetchUserProfile, updateUserProfile } from '@/store/slices/userSlice';
+import type { RootState, AppDispatch } from '@/store/store';
+import type { User } from '@/store/slices/authSlice';
+import { toast } from '@/hooks/use-toast';
 
 export const Profile: React.FC = () => {
-  const [profile, setProfile] = useState({
-    name: 'John Doe',
-    email: 'john.doe@taskflow.com',
-    phone: '+91 8793456423',
-    location: 'Ranchi, Jharkhand',
-    bio: 'Product Manager passionate about building great user experiences and leading cross-functional teams.',
-    joinDate: '03-07-',
-    avatar: '',
-  });
+  const dispatch = useDispatch<AppDispatch>();
+  const { profile } = useSelector((state: RootState) => state.user);
+  const [formData, setFormData] = useState<Partial<User>>({});
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    taskReminders: true,
-    teamUpdates: false,
-  });
+  useEffect(() => {
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (profile) {
+      setFormData(profile);
+    }
+  }, [profile]);
 
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Profile updated:', profile);
+    if (formData) {
+      dispatch(updateUserProfile(formData));
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully.",
+      });
+    }
   };
 
   const stats = [
@@ -55,16 +63,16 @@ export const Profile: React.FC = () => {
             <Card>
               <CardHeader className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4">
-                  <AvatarImage src={profile.avatar} />
+                  <AvatarImage src={formData?.avatar} />
                   <AvatarFallback className="text-xl bg-blue-100 text-blue-600">
-                    {profile.name.split(' ').map(n => n[0]).join('')}
+                    {formData?.name?.split(' ').map((n: string) => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
-                <CardTitle className="text-xl">{profile.name}</CardTitle>
-                <p className="text-gray-600">{profile.email}</p>
+                <CardTitle className="text-xl">{formData?.name}</CardTitle>
+                <p className="text-gray-600">{formData?.email}</p>
                 <Badge variant="secondary" className="mt-2">
                   <Calendar className="w-3 h-3 mr-1" />
-                  Joined {new Date(profile.joinDate).toLocaleDateString()}
+                  Joined {formData?.joinDate ? new Date(formData.joinDate).toLocaleDateString() : ''}
                 </Badge>
               </CardHeader>
               <CardContent>
@@ -87,7 +95,7 @@ export const Profile: React.FC = () => {
             <Tabs defaultValue="profile" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="profile" className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
+                  <UserIcon className="w-4 h-4" />
                   <span className="hidden sm:inline">Profile</span>
                 </TabsTrigger>
                 <TabsTrigger value="notifications" className="flex items-center gap-2">
@@ -112,8 +120,8 @@ export const Profile: React.FC = () => {
                           <Label htmlFor="name">Full Name</Label>
                           <Input
                             id="name"
-                            value={profile.name}
-                            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                            value={formData?.name || ''}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                           />
                         </div>
                         <div className="space-y-2">
@@ -121,8 +129,8 @@ export const Profile: React.FC = () => {
                           <Input
                             id="email"
                             type="email"
-                            value={profile.email}
-                            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                            value={formData?.email || ''}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           />
                         </div>
                       </div>
@@ -132,16 +140,16 @@ export const Profile: React.FC = () => {
                           <Label htmlFor="phone">Phone</Label>
                           <Input
                             id="phone"
-                            value={profile.phone}
-                            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                            value={formData?.phone || ''}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="location">Location</Label>
                           <Input
                             id="location"
-                            value={profile.location}
-                            onChange={(e) => setProfile({ ...profile, location: e.target.value })}
+                            value={formData?.location || ''}
+                            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                           />
                         </div>
                       </div>
@@ -151,8 +159,8 @@ export const Profile: React.FC = () => {
                         <Textarea
                           id="bio"
                           rows={4}
-                          value={profile.bio}
-                          onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                          value={formData?.bio || ''}
+                          onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                         />
                       </div>
 
@@ -176,9 +184,9 @@ export const Profile: React.FC = () => {
                         <p className="text-sm text-gray-600">Receive notifications via email</p>
                       </div>
                       <Switch
-                        checked={notifications.emailNotifications}
-                        onCheckedChange={(checked) => 
-                          setNotifications({ ...notifications, emailNotifications: checked })
+                        checked={formData?.notifications?.emailNotifications || false}
+                        onCheckedChange={(checked) =>
+                          setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, emailNotifications: checked, pushNotifications: prev.notifications?.pushNotifications || false, taskReminders: prev.notifications?.taskReminders || false, teamUpdates: prev.notifications?.teamUpdates || false } }))
                         }
                       />
                     </div>
@@ -189,9 +197,9 @@ export const Profile: React.FC = () => {
                         <p className="text-sm text-gray-600">Receive push notifications</p>
                       </div>
                       <Switch
-                        checked={notifications.pushNotifications}
-                        onCheckedChange={(checked) => 
-                          setNotifications({ ...notifications, pushNotifications: checked })
+                        checked={formData?.notifications?.pushNotifications || false}
+                        onCheckedChange={(checked) =>
+                          setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, pushNotifications: checked, emailNotifications: prev.notifications?.emailNotifications || false, taskReminders: prev.notifications?.taskReminders || false, teamUpdates: prev.notifications?.teamUpdates || false } }))
                         }
                       />
                     </div>
@@ -202,9 +210,9 @@ export const Profile: React.FC = () => {
                         <p className="text-sm text-gray-600">Get reminded about upcoming deadlines</p>
                       </div>
                       <Switch
-                        checked={notifications.taskReminders}
-                        onCheckedChange={(checked) => 
-                          setNotifications({ ...notifications, taskReminders: checked })
+                        checked={formData?.notifications?.taskReminders || false}
+                        onCheckedChange={(checked) =>
+                          setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, taskReminders: checked, emailNotifications: prev.notifications?.emailNotifications || false, pushNotifications: prev.notifications?.pushNotifications || false, teamUpdates: prev.notifications?.teamUpdates || false } }))
                         }
                       />
                     </div>
@@ -215,9 +223,9 @@ export const Profile: React.FC = () => {
                         <p className="text-sm text-gray-600">Notifications about team activities</p>
                       </div>
                       <Switch
-                        checked={notifications.teamUpdates}
-                        onCheckedChange={(checked) => 
-                          setNotifications({ ...notifications, teamUpdates: checked })
+                        checked={formData?.notifications?.teamUpdates || false}
+                        onCheckedChange={(checked) =>
+                          setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, teamUpdates: checked, emailNotifications: prev.notifications?.emailNotifications || false, pushNotifications: prev.notifications?.pushNotifications || false, taskReminders: prev.notifications?.taskReminders || false } }))
                         }
                       />
                     </div>

@@ -12,61 +12,52 @@ import {
   Plus
 } from 'lucide-react';
 import { NewTaskDialog } from '@/components/NewTaskDialog';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
-import { setTasks, setError, setLoading } from '@/store/slices/taskSlice';
-import apiClient from '@/lib/api';
-import { useSelector } from 'react-redux';
-import type { RootState } from '@/store/store';
+import { fetchTasks } from '@/store/slices/taskSlice';
+import type { RootState, AppDispatch } from '@/store/store';
 import { toast } from '@/hooks/use-toast';
 
 export const Dashboard = () => {
-
-  const dispatch = useDispatch();
-  const { token } = useSelector((state: RootState) => state.auth);
-  const { tasks } = useSelector((state: RootState) => state.task);
+  const dispatch = useDispatch<AppDispatch>();
+  const { tasks, error } = useSelector((state: RootState) => state.task);
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      dispatch(setLoading(true));
-      try {
-        const res = await apiClient.get('/tasks/get-all', { headers: { "Authorization": token } });
-        dispatch(setTasks(res.data));
-      } catch (err: any) {
-        dispatch(setError('Failed to load tasks'));
-        toast({
-          title: "Failed to fetch Tasks",
-          description: err,
-        });
-      } finally {
-        dispatch(setLoading(false));
-      }
-    };
-
-    fetchTasks();
+    dispatch(fetchTasks());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Failed to fetch Tasks",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error]);
+
+  const totalTasks = tasks.length;
+  const inProgressTasks = tasks.filter(task => task.status === 'in-progress').length;
+  const completedTasks = tasks.filter(task => task.status === 'done').length;
 
   const stats = [
     {
       title: 'Total Tasks',
-      value: '24',
-      change: '+2 from yesterday',
+      value: totalTasks,
       icon: CheckSquare,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100'
     },
     {
       title: 'In Progress',
-      value: '8',
-      change: '+1 from yesterday',
+      value: inProgressTasks,
       icon: Clock,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-100'
     },
     {
       title: 'Completed',
-      value: '16',
-      change: '+3 from yesterday',
+      value: completedTasks,
       icon: TrendingUp,
       color: 'text-green-600',
       bgColor: 'bg-green-100'
@@ -74,19 +65,16 @@ export const Dashboard = () => {
     {
       title: 'Team Members',
       value: '12',
-      change: 'No change',
       icon: Users,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100'
     },
   ];
 
-
-  const upcomingDeadlines = [
-    { task: 'Frontend deployment', dueDate: '2024-01-12', priority: 'High' },
-    { task: 'Database migration', dueDate: '2024-01-14', priority: 'Medium' },
-    { task: 'User testing session', dueDate: '2024-01-16', priority: 'Low' },
-  ];
+  const upcomingDeadlines = tasks
+    .filter(task => task.status !== 'done' && new Date(task.dueDate) > new Date())
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    .slice(0, 3);
 
   return (
     <Layout>
@@ -118,7 +106,6 @@ export const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                <p className="text-xs text-gray-600 mt-1">{stat.change}</p>
               </CardContent>
             </Card>
           ))}
@@ -136,8 +123,8 @@ export const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {tasks.map((task) => (
-                    <div key={task._id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg space-y-2 sm:space-y-0">
+                  {tasks.slice(0, 5).map((task) => (
+                    <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg space-y-2 sm:space-y-0">
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900">{task.title}</h4>
                       </div>
@@ -149,12 +136,12 @@ export const Dashboard = () => {
                           {task.priority}
                         </Badge>
                         <Badge variant={
-                          task.status === 'completed' ? 'default' :
+                          task.status === 'done' ? 'default' :
                             task.status === 'in-progress' ? 'secondary' : 'outline'
                         }>
                           {task.status}
                         </Badge>
-                        <span className="text-xs text-gray-500">{task.dueDate}</span>
+                        <span className="text-xs text-gray-500">{new Date(task.dueDate).toLocaleDateString()}</span>
                       </div>
                     </div>
                   ))}
@@ -173,20 +160,20 @@ export const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {upcomingDeadlines.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 border-l-4 border-orange-200 bg-orange-50 rounded">
+                  {upcomingDeadlines.map((task) => (
+                    <div key={task.id} className="flex items-center justify-between p-2 border-l-4 border-orange-200 bg-orange-50 rounded">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{item.task}</p>
+                        <p className="text-sm font-medium text-gray-900">{task.title}</p>
                         <div className="flex items-center mt-1">
                           <Calendar className="w-3 h-3 mr-1 text-gray-500" />
-                          <span className="text-xs text-gray-600">{item.dueDate}</span>
+                          <span className="text-xs text-gray-600">{new Date(task.dueDate).toLocaleDateString()}</span>
                         </div>
                       </div>
                       <Badge variant={
-                        item.priority === 'High' ? 'destructive' :
-                          item.priority === 'Medium' ? 'default' : 'secondary'
+                        task.priority === 'high' ? 'destructive' :
+                          task.priority === 'medium' ? 'default' : 'secondary'
                       }>
-                        {item.priority}
+                        {task.priority}
                       </Badge>
                     </div>
                   ))}
